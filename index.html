@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cờ caro</title>
+  <style>
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      border-collapse: collapse;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      border: 1px solid black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 3rem;
+      cursor: pointer;
+    }
+    .cell:hover {
+        background-color: aqua;
+    }
+
+    .cell.X {
+      color: blue;
+    }
+
+    .cell.O {
+      color: red;
+    }
+
+    .win-line {
+      background-color: yellow;
+    }
+    .buttons {
+        margin: 48px 40%;
+        padding: 20px;
+    }
+    .buttons .startButton {
+        background-color: rgb(0, 255, 221);
+        padding: 5px;
+        border: none;
+        border-radius: 20%;
+        color: black;
+    } 
+    .buttons .resetButton {
+        background-color: rgb(238, 255, 0);
+        padding: 5px;
+        border: none;
+        border-radius: 20%;
+        color: black;
+    } 
+    #gameStatus {
+        font-size: 35px;
+        padding-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p>Lượt của: <span id="currentPlayer"></span></p>
+    <div id="gameStatus">Bấm bắt đầu để chơi!</div>
+    
+    <div class="board" id="board"></div>
+    <div class="buttons">
+        <button class="startButton" id="startButton">Bắt đầu</button>
+        <button class="resetButton" id="resetButton" disabled>Chơi lại</button>
+      </div>
+  </div>
+
+  <script>
+    const board = [];
+    let currentPlayer = 'X';
+    let gameActive = false;
+
+    const boardElement = document.getElementById('board');
+    const startButton = document.getElementById('startButton');
+    const resetButton = document.getElementById('resetButton');
+    const currentPlayerElement = document.getElementById('currentPlayer');
+
+    // Khởi tạo bàn cờ
+    function initializeBoard() {
+      board.length = 0;
+      for (let i = 0; i < 3; i++) {
+        board[i] = new Array(3).fill('');
+      }
+    }
+
+    // Kiểm tra xem có người thắng hay không
+    function checkWin() {
+      const winConditions = [
+        [[0, 0], [0, 1], [0, 2]], // Hàng ngang 1
+        [[1, 0], [1, 1], [1, 2]], // Hàng ngang 2
+        [[2, 0], [2, 1], [2, 2]], // Hàng ngang 3
+        [[0, 0], [1, 0], [2, 0]], // Hàng dọc 1
+        [[0, 1], [1, 1], [2, 1]], // Hàng dọc 2
+        [[0, 2], [1, 2], [2, 2]], // Hàng dọc 3
+        [[0, 0], [1, 1], [2, 2]], // Chéo chính
+        [[0, 2], [1, 1], [2, 0]]  // Chéo phụ
+      ];
+
+      for (const condition of winConditions) {
+        const [[a, b], [c, d], [e, f]] = condition;
+        if (
+          board[a][b] &&
+          board[a][b] === board[c][d] &&
+          board[a][b] === board[e][f]
+        ) {
+          // Đánh dấu đường thắng
+          document.querySelectorAll(`[data-row="${a}"][data-col="${b}"], [data-row="${c}"][data-col="${d}"], [data-row="${e}"][data-col="${f}"]`).forEach(cell => {
+            cell.classList.add('win-line');
+          });
+          return board[a][b];
+        }
+      }
+      return null;
+    }
+
+    // Kiểm tra xem trò chơi có hòa hay không
+    function checkDraw() {
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if (board[i][j] === '') {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    // Xử lý khi người chơi nhấp vào ô
+    function handleCellClick(row, col) {
+      if (board[row][col] === '' && gameActive) {
+        board[row][col] = currentPlayer;
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        cell.textContent = currentPlayer;
+        cell.classList.add(currentPlayer);
+
+        const winner = checkWin();
+        if (winner) {
+            gameStatus.textContent = `Người chơi ${currentPlayer} đã chiến thắng! Bấm chơi lại để bắt đầu`;
+          gameActive = false;
+          resetButton.disabled = false;
+        } else if (checkDraw()) {
+            gameStatus.textContent = "Chưa có người chiến thắng! Bấm chơi lại để bắt đầu";
+          gameActive = false;
+          resetButton.disabled = false;
+        } else {
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+          currentPlayerElement.textContent = currentPlayer;
+        }
+      }
+    }
+
+    // Tạo bảng
+    function renderBoard() {
+      boardElement.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          const cell = document.createElement('div');
+          cell.classList.add('cell');
+          cell.dataset.row = i;
+          cell.dataset.col = j;
+          cell.addEventListener('click', () => handleCellClick(i, j));
+          boardElement.appendChild(cell);
+        }
+      }
+    }
+
+    // Bắt đầu trò chơi
+    startButton.addEventListener('click', () => {
+      if (!gameActive) {
+        gameActive = true;
+        gameStatus.textContent ="Hãy chiến đấu hết mình!";
+        currentPlayer = 'X';
+        currentPlayerElement.textContent = currentPlayer;
+        initializeBoard();
+        renderBoard();
+        resetButton.disabled = true;
+      }
+    });
+
+    // Chơi lại
+    resetButton.addEventListener('click', () => {
+      gameActive = false;
+      startButton.click();
+      
+    });
+
+    initializeBoard();
+    renderBoard();
+  </script>
+</body>
+</html>
